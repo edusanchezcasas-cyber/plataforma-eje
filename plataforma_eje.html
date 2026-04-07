@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor de EJE — Vinatea & Toyama</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rojo:#8B0000;--rojo-medio:#A52020;--rojo-claro:#FFF5F5;--rojo-borde:#F5C1C1;
+  --verde:#1D9E75;--verde-claro:#E1F5EE;--verde-borde:#9FE1CB;--verde-texto:#085041;
+  --amber:#BA7517;--amber-claro:#FAEEDA;
+  --gris-fondo:#F7F6F3;--gris-borde:rgba(0,0,0,0.1);--gris-borde-med:rgba(0,0,0,0.15);
+  --texto:#1A1A1A;--texto-sec:#666560;--texto-ter:#9C9A93;--blanco:#ffffff;
+  --radio:12px;--radio-sm:8px;--radio-pill:99px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--gris-fondo);color:var(--texto);min-height:100vh;font-size:14px;line-height:1.5}
+header{background:var(--rojo);padding:0 2rem;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.logo-mark{width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff}
+.logo-text{color:#fff;font-size:14px;font-weight:500}
+.logo-sub{color:rgba(255,255,255,0.55);font-size:11px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.status-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:var(--radio-pill);font-size:12px;color:#fff}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#4ADE80}
+.status-dot.blocked{background:#FCA5A5}
+.user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);padding:4px 12px 4px 4px;border-radius:var(--radio-pill);color:#fff;font-size:12px}
+.user-av{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+.hora-badge{background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:var(--radio-pill);font-size:12px;color:rgba(255,255,255,0.8);font-family:'DM Mono',monospace}
+.page{max-width:960px;margin:0 auto;padding:1.5rem;display:grid;grid-template-columns:1fr 340px;gap:1.25rem;align-items:start}
+.col-main{display:flex;flex-direction:column;gap:1rem}
+.col-side{display:flex;flex-direction:column;gap:1rem}
+.card{background:var(--blanco);border:0.5px solid var(--gris-borde);border-radius:var(--radio);padding:1.25rem}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texto-ter);margin-bottom:1rem}
+.hora-ctrl{background:var(--blanco);border:0.5px solid var(--gris-borde);border-radius:var(--radio);padding:1rem 1.25rem;display:flex;align-items:center;gap:12px}
+.hora-ctrl label{font-size:12px;color:var(--texto-sec);white-space:nowrap}
+.hora-ctrl input[type=range]{flex:1;accent-color:var(--rojo)}
+.hora-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;min-width:54px;color:var(--texto)}
+.hora-status{font-size:11px;padding:3px 9px;border-radius:var(--radio-pill);white-space:nowrap;flex-shrink:0}
+.hora-status.activo{background:var(--verde-claro);color:var(--verde-texto)}
+.hora-status.warning{background:var(--amber-claro);color:var(--amber)}
+.hora-status.bloqueado{background:#FEE2E2;color:#991B1B}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metric{background:var(--gris-fondo);border-radius:var(--radio-sm);padding:10px 12px}
+.metric-label{font-size:11px;color:var(--texto-ter);margin-bottom:2px}
+.metric-val{font-size:24px;font-weight:600;color:var(--texto);line-height:1}
+.metric-val.verde{color:var(--verde)}
+.metric-val.amber{color:var(--amber)}
+.form-label{font-size:13px;font-weight:500;color:var(--texto-sec);margin-bottom:10px;display:block}
+.seg-row{display:flex;align-items:flex-end;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:flex;flex-direction:column;gap:4px}
+.seg input{border:1px solid var(--gris-borde-med);border-radius:var(--radio-sm);padding:9px 8px;font-size:14px;font-family:'DM Mono',monospace;background:var(--gris-fondo);color:var(--texto);text-align:center;outline:none;transition:border-color .15s,background .15s}
+.seg input:focus{border-color:var(--rojo);background:var(--blanco);box-shadow:0 0 0 3px rgba(139,0,0,.08)}
+.seg input:disabled{opacity:.4;cursor:not-allowed}
+.seg span{font-size:10px;color:var(--texto-ter);text-align:center}
+.sep{color:var(--texto-ter);font-size:18px;padding-bottom:10px;font-weight:300}
+.btn-main{width:100%;padding:11px;background:var(--rojo);color:#fff;border:none;border-radius:var(--radio-sm);font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s,transform .1s}
+.btn-main:hover{background:var(--rojo-medio)}
+.btn-main:active{transform:scale(0.99)}
+.btn-main:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+/* PASOS */
+.steps-panel{display:none;background:var(--blanco);border:0.5px solid var(--gris-borde);border-radius:var(--radio);padding:1.25rem;animation:fadeIn .25s ease}
+.steps-panel.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.steps-heading{font-size:13px;font-weight:600;color:var(--texto);margin-bottom:12px}
+.step-list{display:flex;flex-direction:column;gap:6px}
+.srow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radio-sm);background:var(--gris-fondo);transition:background .3s}
+.srow.running{background:var(--verde-claro)}
+.srow.failed{background:#FFF5F5}
+.sicon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,0.07);transition:background .3s}
+.srow.running .sicon{background:rgba(29,158,117,0.15)}
+.srow.done .sicon{background:#D1FAE5}
+.srow.failed .sicon{background:#FEE2E2}
+.stext{font-size:13px;color:var(--texto-sec)}
+.srow.running .stext{color:var(--texto);font-weight:500}
+.srow.failed .stext{color:#991B1B;font-weight:500}
+.sspin{width:11px;height:11px;border:1.5px solid var(--verde);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sdot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,0.15)}
+.scheck{color:var(--verde);font-size:12px;font-weight:700}
+.sx{color:#E24B4A;font-size:12px;font-weight:700}
+.result-box{display:none;border-radius:var(--radio-sm);padding:12px;margin-top:12px}
+.result-box.ok{background:var(--verde-claro);border:0.5px solid var(--verde-borde)}
+.result-box.err{background:#FFF5F5;border:0.5px solid var(--rojo-borde)}
+.rb-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.result-box.ok .rb-title{color:var(--verde-texto)}
+.result-box.err .rb-title{color:#991B1B}
+.rb-exp{font-family:'DM Mono',monospace;font-size:11px;color:var(--texto-sec)}
+.rb-reasons{margin-top:10px;padding-top:10px;border-top:0.5px solid #FECACA;display:flex;flex-direction:column;gap:5px}
+.rb-reason{display:flex;gap:7px;font-size:11px;color:#7F1D1D;line-height:1.5}
+.rb-rdot{width:5px;height:5px;border-radius:50%;background:#DC2626;flex-shrink:0;margin-top:5px}
+.btn-dl{display:flex;align-items:center;gap:7px;margin-top:10px;padding:8px 14px;border:1px solid var(--verde);border-radius:var(--radio-sm);background:transparent;color:var(--verde-texto);font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;width:fit-content}
+.btn-dl:hover{background:var(--verde-claro)}
+.btn-retry{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px;padding:8px;width:100%;border:1px solid #DC2626;border-radius:var(--radio-sm);background:transparent;color:#991B1B;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-retry:hover{background:#FFF5F5}
+.blocked-panel{display:none;background:var(--rojo-claro);border:1px solid var(--rojo-borde);border-radius:var(--radio);padding:2rem;text-align:center}
+.blocked-icon-wrap{width:52px;height:52px;background:#FEE2E2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.blocked-title{font-size:16px;font-weight:600;color:#991B1B;margin-bottom:6px}
+.blocked-sub{font-size:13px;color:#B91C1C;line-height:1.6}
+.blocked-note{font-size:11px;color:#9CA3AF;margin-top:12px}
+.browser-box{border:1px solid var(--gris-borde);border-radius:var(--radio-sm);padding:12px;margin-bottom:12px;transition:border-color .3s}
+.browser-box.active{border-color:var(--verde-borde);background:#FAFFFE}
+.browser-box.blocked-state{border-color:var(--rojo-borde);background:#FFFAFA}
+.br-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.br-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.br-dot.idle{background:#D3D1C7}
+.br-dot.active{background:var(--verde)}
+.br-dot.blocked{background:#E24B4A}
+.br-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:var(--radio-pill)}
+.br-badge.idle{background:var(--gris-fondo);color:var(--texto-ter)}
+.br-badge.active{background:var(--verde-claro);color:var(--verde-texto)}
+.br-badge.blocked{background:#FEE2E2;color:#991B1B}
+.br-exp{font-family:'DM Mono',monospace;font-size:11px;color:var(--texto-sec);margin-bottom:7px;min-height:16px}
+.prog-track{height:3px;background:var(--gris-fondo);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--verde);border-radius:2px;transition:width .35s linear}
+.br-user{font-size:11px;color:var(--texto-ter);margin-top:6px}
+.queue-list{display:flex;flex-direction:column;gap:5px}
+.q-empty{padding:16px;text-align:center;font-size:12px;color:var(--texto-ter);border:1px dashed var(--gris-borde);border-radius:var(--radio-sm)}
+.q-item{display:flex;align-items:center;gap:8px;border:0.5px solid var(--gris-borde);border-radius:var(--radio-sm);padding:8px 10px;background:var(--blanco);animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.q-pos{width:20px;height:20px;border-radius:50%;background:var(--gris-fondo);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;color:var(--texto-sec)}
+.q-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0}
+.q-name{font-size:12px;font-weight:500}
+.q-exp{font-family:'DM Mono',monospace;font-size:10px;color:var(--texto-sec)}
+.q-badge{font-size:10px;padding:2px 8px;border-radius:var(--radio-pill);background:var(--gris-fondo);color:var(--texto-sec);margin-left:auto;flex-shrink:0}
+.hist-list{display:flex;flex-direction:column}
+.hist-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--gris-borde);font-size:12px;animation:fadeIn .3s ease}
+.hist-item:last-child{border-bottom:none}
+.hist-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.hist-exp{font-family:'DM Mono',monospace;font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-user{color:var(--texto-sec);flex-shrink:0}
+.hist-ago{color:var(--texto-ter);flex-shrink:0;font-size:11px}
+.hist-dl{font-size:10px;padding:2px 8px;border-radius:var(--radio-pill);flex-shrink:0}
+.hist-dl.ok{background:#D1FAE5;color:#065F46}
+.hist-dl.err{background:#FEE2E2;color:#991B1B}
+.abogado-frame{border:1px solid var(--gris-borde);border-radius:var(--radio);overflow:hidden}
+.abogado-topbar{background:var(--gris-fondo);border-bottom:0.5px solid var(--gris-borde);padding:8px 12px;display:flex;align-items:center;gap:8px}
+.dot-b{width:10px;height:10px;border-radius:50%}
+.url-bar{flex:1;background:var(--blanco);border:0.5px solid var(--gris-borde);border-radius:6px;padding:4px 10px;font-size:11px;font-family:'DM Mono',monospace;color:var(--texto-sec)}
+.abogado-body{padding:1.25rem}
+.ab-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--texto-ter);margin-bottom:.75rem}
+.ab-user-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--gris-borde)}
+.ab-av{width:28px;height:28px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#085041}
+.ab-chip{font-size:11px;padding:2px 8px;border-radius:var(--radio-pill)}
+.ab-chip.ok{background:var(--verde-claro);color:var(--verde-texto)}
+.ab-chip.proc{background:var(--amber-claro);color:var(--amber)}
+.ab-chip.err{background:#FEE2E2;color:#991B1B}
+.ab-result{display:none;margin-top:12px;padding:12px;border-radius:var(--radio-sm)}
+.ab-result.ok{background:var(--verde-claro);border:0.5px solid var(--verde-borde)}
+.ab-result.err{background:#FFF5F5;border:0.5px solid var(--rojo-borde)}
+.ab-result-title{font-size:13px;font-weight:500;margin-bottom:3px}
+.ab-result.ok .ab-result-title{color:var(--verde-texto)}
+.ab-result.err .ab-result-title{color:#991B1B}
+.ab-result-exp{font-family:'DM Mono',monospace;font-size:11px;color:var(--texto-sec)}
+.btn-dl-ab{display:flex;align-items:center;gap:7px;margin-top:10px;padding:8px 14px;border:1px solid var(--verde);border-radius:var(--radio-sm);background:transparent;color:var(--verde-texto);font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-dl-ab:hover{background:var(--verde-claro)}
+.ab-blocked-msg{text-align:center;padding:1.5rem 1rem}
+.ab-blocked-t{font-size:14px;font-weight:600;color:#991B1B;margin-bottom:4px;margin-top:8px}
+.ab-blocked-s{font-size:12px;color:#B91C1C;line-height:1.6}
+.ley-row{display:flex;align-items:flex-start;gap:10px}
+.ley-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ley-title{font-size:12px;font-weight:500;margin-bottom:1px}
+.ley-sub{font-size:11px;color:var(--texto-sec)}
+@media(max-width:720px){.page{grid-template-columns:1fr}header{padding:0 1rem}.hora-ctrl label{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">V&T</div>
+  <div>
+    <div class="logo-text">Gestor de EJE</div>
+    <div class="logo-sub">Vinatea &amp; Toyama Abogados</div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill"><div class="status-dot" id="h-dot"></div><span id="h-status">Sistema activo</span></div>
+    <div class="hora-badge" id="h-hora">10:00 am</div>
+    <div class="user-chip"><div class="user-av">ES</div>E. Sánchez</div>
+  </div>
+</header>
+
+<div class="page">
+  <div class="col-main">
+
+    <div class="hora-ctrl">
+      <label>Hora simulada</label>
+      <input type="range" min="7" max="23" step="1" value="10" id="hour-slider" oninput="updateHour(this.value)">
+      <span class="hora-val" id="hora-val">10:00 am</span>
+      <span class="hora-status activo" id="hora-status">Sistema activo</span>
+    </div>
+
+    <div class="card">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">En cola</div><div class="metric-val amber" id="m-queue">0</div></div>
+        <div class="metric"><div class="metric-label">Completados hoy</div><div class="metric-val verde" id="m-done">12</div></div>
+        <div class="metric"><div class="metric-label">Tiempo promedio</div><div class="metric-val">38s</div></div>
+      </div>
+    </div>
+
+    <div class="card" id="form-card">
+      <div class="card-title">Nueva solicitud de EJE</div>
+      <label class="form-label">Código de expediente</label>
+      <div class="seg-row">
+        <div class="seg"><input id="s1" maxlength="5" placeholder="00001" style="width:62px" oninput="nxt(this,'s2')"><span>5 díg.</span></div>
+        <div class="sep">-</div>
+        <div class="seg"><input id="s2" maxlength="4" placeholder="2024" style="width:54px" oninput="nxt(this,'s3')"><span>año</span></div>
+        <div class="sep">-</div>
+        <div class="seg"><input id="s3" maxlength="1" placeholder="0" style="width:32px" oninput="nxt(this,'s4')"><span>N°</span></div>
+        <div class="sep">-</div>
+        <div class="seg"><input id="s4" maxlength="4" placeholder="1817" style="width:54px" oninput="nxt(this,'s5')"><span>4 díg.</span></div>
+        <div class="sep">-</div>
+        <div class="seg"><input id="s5" maxlength="2" placeholder="JR" style="width:38px" oninput="nxt(this,'s6')"><span>2 car.</span></div>
+        <div class="sep">-</div>
+        <div class="seg"><input id="s6" maxlength="2" placeholder="CO" style="width:38px" oninput="nxt(this,'s7')"><span>2 car.</span></div>
+        <div class="sep">-</div>
+        <div class="seg"><input id="s7" maxlength="2" placeholder="06" style="width:38px" oninput="nxt(this,'')"><span>2 car.</span></div>
+      </div>
+      <button class="btn-main" id="btn-send" onclick="enviar()">Solicitar EJE</button>
+    </div>
+
+    <div class="steps-panel" id="steps-panel">
+      <div class="steps-heading" id="steps-heading">Procesando solicitud...</div>
+      <div class="step-list">
+        <div class="srow" id="st0"><div class="sicon"><div class="sdot"></div></div><div class="stext">Iniciando sesión en SINOE</div></div>
+        <div class="srow" id="st1"><div class="sicon"><div class="sdot"></div></div><div class="stext">Verificando acceso</div></div>
+        <div class="srow" id="st2"><div class="sicon"><div class="sdot"></div></div><div class="stext">Buscando expediente en SINOE</div></div>
+        <div class="srow" id="st3"><div class="sicon"><div class="sdot"></div></div><div class="stext">Descargando EJE</div></div>
+      </div>
+      <div class="result-box" id="result-box">
+        <div class="rb-title" id="rb-title"></div>
+        <div class="rb-exp" id="rb-exp"></div>
+        <div class="rb-reasons" id="rb-reasons" style="display:none">
+          <div class="rb-reason"><div class="rb-rdot"></div><div>El expediente no existe o aún no ha sido digitalizado en SINOE.</div></div>
+          <div class="rb-reason"><div class="rb-rdot"></div><div>Verifica que el código ingresado sea correcto.</div></div>
+          <div class="rb-reason"><div class="rb-rdot"></div><div>Si el expediente es reciente, puede tardar hasta 24 horas en aparecer.</div></div>
+        </div>
+        <button class="btn-dl" id="btn-dl" onclick="simDl(this)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v7M5 8l3 3 3-3"/><path d="M2 13h12"/></svg>
+          Descargar PDF del expediente
+        </button>
+        <button class="btn-retry" id="btn-retry" onclick="limpiar()" style="display:none">&#x21BA; &nbsp;Intentar con otro expediente</button>
+      </div>
+    </div>
+
+    <div class="blocked-panel" id="blocked-panel">
+      <div class="blocked-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#991B1B" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="blocked-title">Solicitudes bloqueadas desde las 5:00 pm</div>
+      <div class="blocked-sub">El usuario de SINOE está reservado para la presentación de escritos.<br>No se pueden procesar solicitudes de EJE en este horario.</div>
+      <div class="blocked-note">Disponible nuevamente mañana a partir de las 7:00 am</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Monitor del sistema</div>
+      <div class="browser-box" id="browser-box">
+        <div class="br-header">
+          <div class="br-dot idle" id="br-dot"></div>
+          <span style="font-size:12px;font-weight:500">Navegador SINOE &middot; Casilla 108030</span>
+          <span class="br-badge idle" id="br-badge">Libre</span>
+        </div>
+        <div class="br-exp" id="br-exp" style="color:var(--texto-ter)">&#8212;</div>
+        <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+        <div class="br-user" id="br-user">En espera de solicitudes</div>
+      </div>
+      <div class="card-title" style="margin-top:4px">Cola de espera</div>
+      <div class="queue-list" id="queue-list">
+        <div class="q-empty">No hay solicitudes en cola</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Historial del día</div>
+      <div class="hist-list" id="hist-list">
+        <div class="hist-item"><div class="hist-dot" style="background:var(--verde)"></div><span class="hist-exp">05821-2024-0-1817-JR-LA-04</span><span class="hist-user">M. Torres</span><span class="hist-ago">hace 8 min</span><span class="hist-dl ok">&#8595; PDF</span></div>
+        <div class="hist-item"><div class="hist-dot" style="background:var(--verde)"></div><span class="hist-exp">12034-2023-0-1817-JR-CO-01</span><span class="hist-user">R. Quispe</span><span class="hist-ago">hace 14 min</span><span class="hist-dl ok">&#8595; PDF</span></div>
+        <div class="hist-item"><div class="hist-dot" style="background:#E24B4A"></div><span class="hist-exp">99999-2019-0-1817-JR-LA-07</span><span class="hist-user">E. S&aacute;nchez</span><span class="hist-ago">hace 21 min</span><span class="hist-dl err">No encontrado</span></div>
+        <div class="hist-item"><div class="hist-dot" style="background:var(--verde)"></div><span class="hist-exp">00891-2024-0-1817-JR-CO-09</span><span class="hist-user">L. Paredes</span><span class="hist-ago">hace 30 min</span><span class="hist-dl ok">&#8595; PDF</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-side">
+    <div class="card">
+      <div class="card-title">Vista del abogado</div>
+      <p style="font-size:12px;color:var(--texto-sec);margin-bottom:12px;line-height:1.6">Lo que ve el abogado en su pantalla. El proceso ocurre completamente en segundo plano.</p>
+      <div class="abogado-frame">
+        <div class="abogado-topbar">
+          <div class="dot-b" style="background:#FF5F57"></div>
+          <div class="dot-b" style="background:#FFBD2E"></div>
+          <div class="dot-b" style="background:#28CA41"></div>
+          <div class="url-bar">eje.vinateatoyama.com</div>
+        </div>
+        <div class="abogado-body">
+          <div id="ab-active">
+            <div class="ab-title">Gestor de EJE</div>
+            <div class="ab-user-row">
+              <div class="ab-av">ES</div>
+              <span style="font-size:13px;font-weight:500">E. S&aacute;nchez</span>
+              <span class="ab-chip ok" id="ab-chip">Listo</span>
+            </div>
+            <div style="margin-bottom:10px">
+              <label class="form-label" style="font-size:12px;margin-bottom:6px">Expediente</label>
+              <div style="display:flex;gap:3px;align-items:flex-end;flex-wrap:wrap">
+                <div class="seg"><input id="a1" maxlength="5" placeholder="00001" style="width:50px;font-size:12px;padding:6px 5px" oninput="nxt(this,'a2')"><span>5</span></div>
+                <div class="sep" style="font-size:14px;padding-bottom:8px">-</div>
+                <div class="seg"><input id="a2" maxlength="4" placeholder="2024" style="width:44px;font-size:12px;padding:6px 5px" oninput="nxt(this,'a3')"><span>a&ntilde;o</span></div>
+                <div class="sep" style="font-size:14px;padding-bottom:8px">-</div>
+                <div class="seg"><input id="a3" maxlength="1" placeholder="0" style="width:24px;font-size:12px;padding:6px 4px" oninput="nxt(this,'a4')"><span>N&deg;</span></div>
+                <div class="sep" style="font-size:14px;padding-bottom:8px">-</div>
+                <div class="seg"><input id="a4" maxlength="4" placeholder="1817" style="width:44px;font-size:12px;padding:6px 5px" oninput="nxt(this,'a5')"><span>juzg.</span></div>
+                <div class="sep" style="font-size:14px;padding-bottom:8px">-</div>
+                <div class="seg"><input id="a5" maxlength="2" placeholder="JR" style="width:28px;font-size:12px;padding:6px 4px" oninput="nxt(this,'a6')"><span>org.</span></div>
+                <div class="sep" style="font-size:14px;padding-bottom:8px">-</div>
+                <div class="seg"><input id="a6" maxlength="2" placeholder="CO" style="width:28px;font-size:12px;padding:6px 4px" oninput="nxt(this,'a7')"><span>esp.</span></div>
+                <div class="sep" style="font-size:14px;padding-bottom:8px">-</div>
+                <div class="seg"><input id="a7" maxlength="2" placeholder="06" style="width:28px;font-size:12px;padding:6px 4px" oninput="nxt(this,'')"><span>inst.</span></div>
+              </div>
+            </div>
+            <button class="btn-main" id="ab-btn" onclick="enviarAb()" style="font-size:13px;padding:9px">Obtener EJE</button>
+            <div class="ab-result" id="ab-result">
+              <div class="ab-result-title" id="ab-result-title"></div>
+              <div class="ab-result-exp" id="ab-result-exp"></div>
+              <button class="btn-dl-ab" id="ab-dl-btn" onclick="this.innerHTML='&#10003; &nbsp;Descargado'">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v7M5 8l3 3 3-3"/><path d="M2 13h12"/></svg>
+                Descargar PDF
+              </button>
+            </div>
+          </div>
+          <div id="ab-blocked" style="display:none">
+            <div class="ab-blocked-msg">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#991B1B" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div class="ab-blocked-t">No disponible</div>
+              <div class="ab-blocked-s">Las solicitudes de EJE est&aacute;n deshabilitadas desde las 5:00 pm.<br>Intenta nuevamente ma&ntilde;ana.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bloqueo autom&aacute;tico 5:00 pm</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="ley-row">
+          <div class="ley-icon" style="background:var(--verde-claro)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"><path d="M3 8l3 3 7-6"/></svg></div>
+          <div><div class="ley-title">7:00 am &ndash; 4:59 pm</div><div class="ley-sub">Sistema activo. Los abogados pueden solicitar EJEs libremente.</div></div>
+        </div>
+        <div class="ley-row">
+          <div class="ley-icon" style="background:var(--amber-claro)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#BA7517" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg></div>
+          <div><div class="ley-title">4:00 pm &ndash; 4:59 pm</div><div class="ley-sub">Aviso de cierre pr&oacute;ximo. El sistema sigue activo.</div></div>
+        </div>
+        <div class="ley-row">
+          <div class="ley-icon" style="background:#FEE2E2"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#991B1B" stroke-width="1.5" stroke-linecap="round"><rect x="4" y="7" width="8" height="7" rx="1"/><path d="M6 7V5a2 2 0 0 1 4 0v2"/></svg></div>
+          <div><div class="ley-title">5:00 pm &ndash; 6:59 am</div><div class="ley-sub">Sistema bloqueado. Usuario SINOE reservado para escritos.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var hora=10,isBlocked=false,processing=false,queue=[],doneCount=12,prog=0,progInt=null,currentErr=false;
+var personas=[
+  {n:'M. Torres',i:'MT',bg:'#E1F5EE',co:'#085041'},
+  {n:'R. Quispe',i:'RQ',bg:'#E6F1FB',co:'#0C447C'},
+  {n:'L. Paredes',i:'LP',bg:'#FAEEDA',co:'#633806'},
+  {n:'J. Vargas',i:'JV',bg:'#EEEDFE',co:'#3C3489'},
+  {n:'G. Polo',i:'GP',bg:'#FBEAF0',co:'#72243E'},
+  {n:'E. Sanchez',i:'ES',bg:'#E1F5EE',co:'#085041'},
+];
+var pIdx=0;
+
+function fmtH(h){var s=h<12?'am':'pm';var d=h===0?12:h>12?h-12:h;return d+':00 '+s;}
+
+function updateHour(v){
+  hora=parseInt(v);
+  var lbl=fmtH(hora);
+  document.getElementById('hora-val').textContent=lbl;
+  document.getElementById('h-hora').textContent=lbl;
+  var blocked=hora>=17,warn=hora===16;
+  isBlocked=blocked;
+  var hs=document.getElementById('hora-status'),hd=document.getElementById('h-dot'),hst=document.getElementById('h-status');
+  if(blocked){hs.className='hora-status bloqueado';hs.textContent='Bloqueado desde las 5pm';hd.className='status-dot blocked';hst.textContent='Sistema bloqueado';}
+  else if(warn){hs.className='hora-status warning';hs.textContent='Cierra en 1 hora';hd.className='status-dot';hst.textContent='Cierre proximo';}
+  else{hs.className='hora-status activo';hs.textContent='Sistema activo';hd.className='status-dot';hst.textContent='Sistema activo';}
+  document.getElementById('form-card').style.display=blocked?'none':'block';
+  document.getElementById('blocked-panel').style.display=blocked?'block':'none';
+  document.getElementById('ab-active').style.display=blocked?'none':'block';
+  document.getElementById('ab-blocked').style.display=blocked?'block':'none';
+  if(blocked&&!processing){document.getElementById('steps-panel').classList.remove('show');setBrBlocked();}
+  else if(!processing)setIdle();
+  for(var i=1;i<=7;i++){var e=document.getElementById('s'+i);if(e)e.disabled=blocked;}
+  document.getElementById('btn-send').disabled=blocked;
+  ['a1','a2','a3','a4','a5','a6','a7'].forEach(function(id){var e=document.getElementById(id);if(e)e.disabled=blocked;});
+  document.getElementById('ab-btn').disabled=blocked;
+}
+
+function setBrBlocked(){
+  document.getElementById('browser-box').className='browser-box blocked-state';
+  document.getElementById('br-dot').className='br-dot blocked';
+  document.getElementById('br-badge').className='br-badge blocked';
+  document.getElementById('br-badge').textContent='Bloqueado';
+  document.getElementById('br-exp').textContent='Reservado para presentacion de escritos';
+  document.getElementById('br-exp').style.color='';
+  document.getElementById('br-user').textContent='Sin aceptar solicitudes de EJE';
+}
+
+function setIdle(){
+  document.getElementById('browser-box').className='browser-box';
+  document.getElementById('br-dot').className='br-dot idle';
+  document.getElementById('br-badge').className='br-badge idle';
+  document.getElementById('br-badge').textContent='Libre';
+  document.getElementById('br-exp').textContent='\u2014';
+  document.getElementById('br-exp').style.color='var(--texto-ter)';
+  document.getElementById('br-user').textContent='En espera de solicitudes';
+}
+
+function nxt(el,nid){if(el.value.length>=el.maxLength&&nid)document.getElementById(nid).focus();}
+
+function getCode(p){return[1,2,3,4,5,6,7].map(function(i){var e=document.getElementById(p+i);return e?e.value:'';}).join('-');}
+
+function setStep(i,state,label){
+  var row=document.getElementById('st'+i);
+  row.className='srow'+(state?' '+state:'');
+  var ic=row.querySelector('.sicon');
+  if(state==='running')ic.innerHTML='<div class="sspin"></div>';
+  else if(state==='done')ic.innerHTML='<span class="scheck">\u2713</span>';
+  else if(state==='failed')ic.innerHTML='<span class="sx">\u2715</span>';
+  else ic.innerHTML='<div class="sdot"></div>';
+  if(label)row.querySelector('.stext').textContent=label;
+}
+
+function resetSteps(){
+  var labels=['Iniciando sesion en SINOE','Verificando acceso','Buscando expediente en SINOE','Descargando EJE'];
+  for(var i=0;i<4;i++){setStep(i,'');document.getElementById('st'+i).querySelector('.stext').textContent=labels[i];}
+  document.getElementById('result-box').style.display='none';
+  document.getElementById('btn-dl').style.display='flex';
+  document.getElementById('btn-retry').style.display='none';
+  document.getElementById('rb-reasons').style.display='none';
+}
+
+function showResult(isErr,code){
+  var rb=document.getElementById('result-box');
+  rb.className='result-box '+(isErr?'err':'ok');
+  rb.style.display='block';
+  document.getElementById('rb-title').textContent=isErr?'Expediente no disponible en SINOE':'EJE listo para descargar';
+  document.getElementById('rb-exp').textContent=code;
+  document.getElementById('btn-dl').style.display=isErr?'none':'flex';
+  document.getElementById('btn-retry').style.display=isErr?'flex':'none';
+  document.getElementById('rb-reasons').style.display=isErr?'flex':'none';
+}
+
+function enviar(){
+  if(isBlocked)return;
+  var code=getCode('s');
+  if(code.replace(/-/g,'').length<10){alert('Completa todos los campos del expediente.');return;}
+  var p=personas[pIdx%personas.length];pIdx++;
+  var item={code:code,person:p.n,av:p};
+  if(!processing)startProcessing(item);
+  else{queue.push(item);renderQueue();updM();}
+  for(var i=1;i<=7;i++){var e=document.getElementById('s'+i);if(e)e.value='';}
+  document.getElementById('s1').focus();
+}
+
+function enviarAb(){
+  if(isBlocked)return;
+  var code=getCode('a');
+  if(code.replace(/-/g,'').length<10){alert('Completa todos los campos.');return;}
+  var chip=document.getElementById('ab-chip'),btn=document.getElementById('ab-btn'),res=document.getElementById('ab-result');
+  chip.className='ab-chip proc';chip.textContent='Procesando...';
+  btn.disabled=true;res.style.display='none';
+  setTimeout(function(){
+    var err=Math.random()<0.12;
+    res.className='ab-result '+(err?'err':'ok');
+    res.style.display='block';
+    document.getElementById('ab-result-title').textContent=err?'Expediente no encontrado':'EJE listo para descargar';
+    document.getElementById('ab-result-exp').textContent=code;
+    document.getElementById('ab-dl-btn').style.display=err?'none':'flex';
+    chip.className='ab-chip '+(err?'err':'ok');chip.textContent=err?'No encontrado':'Listo';
+    btn.disabled=false;
+    if(!err){doneCount++;document.getElementById('m-done').textContent=doneCount;addHist({code:code,person:'E. Sanchez',av:personas[5]},false);}
+  },3000+Math.random()*2000);
+}
+
+function startProcessing(item){
+  processing=true;prog=0;currentErr=Math.random()<0.12;
+  document.getElementById('browser-box').className='browser-box active';
+  document.getElementById('br-dot').className='br-dot active';
+  document.getElementById('br-badge').className='br-badge active';
+  document.getElementById('br-badge').textContent='Procesando';
+  document.getElementById('br-exp').textContent=item.code;
+  document.getElementById('br-exp').style.color='';
+  document.getElementById('br-user').textContent='Solicitado por: '+item.person;
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('steps-panel').classList.add('show');
+  document.getElementById('steps-heading').textContent='Procesando solicitud...';
+  resetSteps();
+  var cum=0,times=currentErr?[900,800,1000,0]:[900,800,1100,1300];
+  var _item=item,_err=currentErr;
+  for(var i=0;i<4;i++){
+    (function(idx,c){
+      if(_err&&idx===2){
+        setTimeout(function(){setStep(idx,'running');},c);
+        setTimeout(function(){
+          setStep(idx,'failed','Expediente no encontrado en SINOE');
+          document.getElementById('steps-heading').textContent='No se pudo obtener el EJE';
+          showResult(true,_item.code);
+        },c+times[idx]);
+        return true;
+      } else if(!_err){
+        setTimeout(function(){setStep(idx,'running');},c);
+        setTimeout(function(){setStep(idx,'done');},c+times[idx]);
+      }
+    })(i,cum);
+    if(_err&&i===2)break;
+    cum+=times[i];
+  }
+  if(progInt)clearInterval(progInt);
+  progInt=setInterval(function(){
+    prog+=1.8;
+    document.getElementById('prog-fill').style.width=Math.min(100,Math.round(prog))+'%';
+    if(prog>=100){clearInterval(progInt);finishProcessing(item);}
+  },350);
+}
+
+function finishProcessing(item){
+  processing=false;
+  doneCount++;document.getElementById('m-done').textContent=doneCount;
+  var err=currentErr;
+  if(!err){showResult(false,item.code);setTimeout(function(){document.getElementById('steps-panel').classList.remove('show');},2000);}
+  addHist(item,err);
+  if(queue.length>0){var nx=queue.shift();renderQueue();updM();setTimeout(function(){startProcessing(nx);},400);}
+  else{if(!isBlocked)setIdle();document.getElementById('prog-fill').style.width='0%';updM();}
+}
+
+function addHist(item,err){
+  var hl=document.getElementById('hist-list');
+  var row=document.createElement('div');row.className='hist-item';
+  row.innerHTML='<div class="hist-dot" style="background:'+(err?'#E24B4A':'var(--verde)')+'"></div>'
+    +'<span class="hist-exp">'+item.code+'</span>'
+    +'<span class="hist-user">'+item.person+'</span>'
+    +'<span class="hist-ago">justo ahora</span>'
+    +'<span class="hist-dl '+(err?'err':'ok')+'">'+(err?'No encontrado':'&#8595; PDF')+'</span>';
+  hl.insertBefore(row,hl.firstChild);
+  if(hl.children.length>7)hl.removeChild(hl.lastChild);
+}
+
+function renderQueue(){
+  var ql=document.getElementById('queue-list');ql.innerHTML='';
+  if(queue.length===0){ql.innerHTML='<div class="q-empty">No hay solicitudes en cola</div>';return;}
+  queue.forEach(function(item,i){
+    var el=document.createElement('div');el.className='q-item';
+    el.innerHTML='<div class="q-pos">'+(i+1)+'</div>'
+      +'<div class="q-av" style="background:'+item.av.bg+';color:'+item.av.co+'">'+item.av.i+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="q-name">'+item.person+'</div><div class="q-exp">'+item.code+'</div></div>'
+      +'<span class="q-badge">En cola</span>';
+    ql.appendChild(el);
+  });
+}
+
+function updM(){document.getElementById('m-queue').textContent=queue.length;}
+function simDl(btn){btn.innerHTML='\u2713 &nbsp;Descargado correctamente';btn.style.borderColor='var(--verde)';btn.style.color='var(--verde-texto)';}
+function limpiar(){document.getElementById('steps-panel').classList.remove('show');for(var i=1;i<=7;i++){var e=document.getElementById('s'+i);if(e)e.value='';}document.getElementById('s1').focus();}
+</script>
+</body>
+</html>
